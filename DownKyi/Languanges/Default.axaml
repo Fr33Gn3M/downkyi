@@ -244,6 +244,7 @@
     <system:String x:Key="DisplaySpace">空格</system:String>
     <system:String x:Key="DisplayUpMid">UP主ID</system:String>
     <system:String x:Key="DisplayUpName">UP主昵称</system:String>
+    <system:String x:Key="DisplayDownloadTime">下载时间</system:String>
     <system:String x:Key="Reset">恢复默认</system:String>
     <system:String x:Key="FileNameTimeFormat">时间格式：</system:String>
     <system:String x:Key="OrderFormat">序号格式：</system:String>

@@ -913,6 +913,7 @@ public class ViewVideoViewModel : ViewModelBase
             FileNamePart.Cid => "cid",
             FileNamePart.UpMid => DictionaryResource.GetString("DisplayUpMid"),
             FileNamePart.UpName => DictionaryResource.GetString("DisplayUpName"),
+            FileNamePart.DownloadTime => DictionaryResource.GetString("DisplayDownloadTime"),
             _ => string.Empty
         };
 

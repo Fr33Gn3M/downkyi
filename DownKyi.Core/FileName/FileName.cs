@@ -23,6 +23,8 @@ public class FileName
     private long _upMid = -1;
     private string _upName = "UP_NAME";
 
+    private string _downloadTime = "DOWNLOAD_TIME";
+
     private FileName(List<FileNamePart> nameParts)
     {
         this._nameParts = nameParts;
@@ -125,6 +127,12 @@ public class FileName
         return this;
     }
 
+    public FileName SetDownloadTime(string downloadTime)
+    {
+        _downloadTime = downloadTime;
+        return this;
+    }
+
     public string RelativePath()
     {
         var path = string.Empty;
@@ -174,6 +182,9 @@ public class FileName
                     break;
                 case FileNamePart.UpName:
                     path += _upName;
+                    break;
+                case FileNamePart.DownloadTime:
+                    path += _downloadTime;
                     break;
             }
 

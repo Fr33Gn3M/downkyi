@@ -21,6 +21,8 @@ public enum FileNamePart
     UpMid,
     UpName,
 
+    DownloadTime,
+
     // 斜杠
     Slash = 100,
 

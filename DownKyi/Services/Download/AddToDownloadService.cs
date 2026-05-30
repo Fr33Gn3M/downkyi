@@ -454,7 +454,9 @@ public class AddToDownloadService
                     .SetBvid(page.Bvid)
                     .SetCid(page.Cid)
                     .SetUpMid(page.Owner.Mid)
-                    .SetUpName(Format.FormatFileName(page.Owner.Name));
+                    .SetUpName(Format.FormatFileName(page.Owner.Name))
+                    .SetDownloadTime(DateTime.Now.ToString(
+                        SettingsManager.GetInstance().GetFileNamePartTimeFormat()));
 
                 // 序号设置
                 var orderFormat = SettingsManager.GetInstance().GetOrderFormat();
