@@ -93,7 +93,6 @@ jobs:
         with:
           allowUpdates: true
           artifacts: script/pupnet/output/DownKyi-${{ steps.version.outputs.content }}-1.win-${{ matrix.cpu }}-trimmed.${{ matrix.kind }}
-          body: ${{ needs.changelog.outputs.release_body }}
   build-linux:
     runs-on: ubuntu-22.04
     needs: changelog
@@ -168,8 +167,8 @@ jobs:
         if: ${{ startsWith(github.ref, 'refs/tags/') }}
         with:
           allowUpdates: true
+          makeLatest: true
           artifacts: script/pupnet/output/${{ matrix.package-head }}${{ steps.version.outputs.content }}_linux_${{ matrix.type }}${{ matrix.package-tail }}.${{ matrix.kind }}
-          body: ${{ needs.changelog.outputs.release_body }}
   # macOS 构建暂时移除：需要 Apple Developer 证书 ($99/年)
   # 如果有需要，在 GitHub Secrets 中配置 MACOS_CERTIFICATE、MACOS_CERTIFICATE_PWD、
   # APPLE_ID、TEAM_ID、APP_SPECIFIC_PASSWORD 后取消注释即可恢复
