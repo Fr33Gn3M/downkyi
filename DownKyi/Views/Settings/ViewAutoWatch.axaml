@@ -1,0 +1,153 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="DownKyi.Views.Settings.ViewAutoWatch"
+             xmlns:prism="http://prismlibrary.com/"
+             prism:ViewModelLocator.AutoWireViewModel="True"
+             xmlns:vms="clr-namespace:DownKyi.ViewModels.Settings"
+             x:DataType="vms:ViewAutoWatchViewModel">
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="50,0" Orientation="Vertical">
+            <StackPanel Margin="0,20,0,0" Orientation="Horizontal">
+                <TextBlock
+                    FontSize="18"
+                    Foreground="{DynamicResource BrushTextDark}"
+                    Text="{DynamicResource AutoWatch}" />
+            </StackPanel>
+
+            <!--  启用自动监控  -->
+            <CheckBox
+                Margin="0,20,0,0"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Top"
+                Command="{Binding AutoWatchEnabledCommand}"
+                Content="{DynamicResource AutoWatchEnabled}"
+                Foreground="{DynamicResource BrushTextDark}"
+                IsChecked="{Binding AutoWatchEnabled, Mode=TwoWay}" />
+
+            <!--  收藏夹ID  -->
+            <StackPanel
+                Margin="0,20,0,0"
+                Orientation="Horizontal"
+                IsVisible="{Binding AutoWatchEnabled}">
+                <TextBlock
+                    VerticalAlignment="Center"
+                    FontSize="12"
+                    Foreground="{DynamicResource BrushTextDark}"
+                    Text="{DynamicResource AutoWatchMediaId}" />
+                <TextBox
+                    Width="200"
+                    Margin="20,0,0,0"
+                    VerticalContentAlignment="Center"
+                    Text="{Binding MediaIdText, Mode=TwoWay}">
+                    <Interaction.Behaviors>
+                        <EventTriggerBehavior EventName="LostFocus">
+                            <InvokeCommandAction Command="{Binding MediaIdCommand}" />
+                        </EventTriggerBehavior>
+                    </Interaction.Behaviors>
+                </TextBox>
+            </StackPanel>
+
+            <!--  轮询间隔  -->
+            <StackPanel
+                Margin="0,20,0,0"
+                Orientation="Horizontal"
+                IsVisible="{Binding AutoWatchEnabled}">
+                <TextBlock
+                    VerticalAlignment="Center"
+                    FontSize="12"
+                    Foreground="{DynamicResource BrushTextDark}"
+                    Text="{DynamicResource AutoWatchInterval}" />
+                <ComboBox
+                    Name="NameIntervals"
+                    Width="120"
+                    Margin="20,0,0,0"
+                    VerticalContentAlignment="Center"
+                    DisplayMemberBinding="{Binding Name}"
+                    ItemsSource="{Binding Intervals}"
+                    SelectedItem="{Binding SelectedInterval}">
+                    <Interaction.Behaviors>
+                        <EventTriggerBehavior EventName="SelectionChanged">
+                            <InvokeCommandAction Command="{Binding IntervalCommand}" />
+                        </EventTriggerBehavior>
+                    </Interaction.Behaviors>
+                </ComboBox>
+            </StackPanel>
+
+            <!--  分隔线  -->
+            <TextBlock
+                Height="1"
+                Margin="0,20,0,0"
+                Background="{DynamicResource BrushBorder}"
+                IsVisible="{Binding AutoWatchEnabled}" />
+
+            <!--  保存目录  -->
+            <StackPanel
+                Margin="0,20,0,0"
+                Orientation="Horizontal"
+                IsVisible="{Binding AutoWatchEnabled}">
+                <TextBlock
+                    VerticalAlignment="Center"
+                    FontSize="12"
+                    Foreground="{DynamicResource BrushTextDark}"
+                    Text="{DynamicResource AutoWatchSaveDirectory}" />
+                <TextBox
+                    Width="400"
+                    Margin="20,0,0,0"
+                    VerticalContentAlignment="Center"
+                    Text="{Binding SaveDirectory, Mode=TwoWay}">
+                    <Interaction.Behaviors>
+                        <EventTriggerBehavior EventName="LostFocus">
+                            <InvokeCommandAction Command="{Binding SaveDirectoryCommand}" />
+                        </EventTriggerBehavior>
+                    </Interaction.Behaviors>
+                </TextBox>
+            </StackPanel>
+
+            <!--  下载内容选择  -->
+            <StackPanel
+                Margin="0,20,0,0"
+                Orientation="Vertical"
+                IsVisible="{Binding AutoWatchEnabled}">
+                <TextBlock
+                    FontSize="12"
+                    Foreground="{DynamicResource BrushTextDark}"
+                    Text="{DynamicResource AutoWatchDownloadContent}" />
+                <CheckBox
+                    Margin="0,10,0,0"
+                    HorizontalAlignment="Left"
+                    Command="{Binding DownloadContentCommand}"
+                    Content="{DynamicResource DownloadAudio}"
+                    Foreground="{DynamicResource BrushTextDark}"
+                    IsChecked="{Binding DownloadAudio, Mode=TwoWay}" />
+                <CheckBox
+                    Margin="0,10,0,0"
+                    HorizontalAlignment="Left"
+                    Command="{Binding DownloadContentCommand}"
+                    Content="{DynamicResource DownloadVideo}"
+                    Foreground="{DynamicResource BrushTextDark}"
+                    IsChecked="{Binding DownloadVideo, Mode=TwoWay}" />
+                <CheckBox
+                    Margin="0,10,0,0"
+                    HorizontalAlignment="Left"
+                    Command="{Binding DownloadContentCommand}"
+                    Content="{DynamicResource DownloadDanmaku}"
+                    Foreground="{DynamicResource BrushTextDark}"
+                    IsChecked="{Binding DownloadDanmaku, Mode=TwoWay}" />
+                <CheckBox
+                    Margin="0,10,0,0"
+                    HorizontalAlignment="Left"
+                    Command="{Binding DownloadContentCommand}"
+                    Content="{DynamicResource DownloadSubtitle}"
+                    Foreground="{DynamicResource BrushTextDark}"
+                    IsChecked="{Binding DownloadSubtitle, Mode=TwoWay}" />
+                <CheckBox
+                    Margin="0,10,0,0"
+                    HorizontalAlignment="Left"
+                    Command="{Binding DownloadContentCommand}"
+                    Content="{DynamicResource DownloadCover}"
+                    Foreground="{DynamicResource BrushTextDark}"
+                    IsChecked="{Binding DownloadCover, Mode=TwoWay}" />
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

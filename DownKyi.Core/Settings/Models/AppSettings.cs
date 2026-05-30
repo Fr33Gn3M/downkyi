@@ -9,4 +9,5 @@ public class AppSettings
     public AboutSettings About { get; set; } = new();
     public UserInfoSettings UserInfo { get; set; } = new();
     public WindowSettings WindowSettings { get; set; } = new();
+    public AutoWatchSettings AutoWatch { get; set; } = new();
 }

@@ -59,7 +59,8 @@ public class ViewSettingsViewModel : ViewModelBase
             new() { Id = 1, Title = DictionaryResource.GetString("Network") },
             new() { Id = 2, Title = DictionaryResource.GetString("Video") },
             new() { Id = 3, Title = DictionaryResource.GetString("SettingDanmaku") },
-            new() { Id = 4, Title = DictionaryResource.GetString("About") }
+            new() { Id = 4, Title = DictionaryResource.GetString("About") },
+            new() { Id = 5, Title = DictionaryResource.GetString("AutoWatch") }
         };
 
         #endregion
@@ -118,6 +119,9 @@ public class ViewSettingsViewModel : ViewModelBase
                 break;
             case 4:
                 _regionManager.RequestNavigate("SettingsContentRegion", ViewAboutViewModel.Tag);
+                break;
+            case 5:
+                _regionManager.RequestNavigate("SettingsContentRegion", ViewAutoWatchViewModel.Tag);
                 break;
         }
     }

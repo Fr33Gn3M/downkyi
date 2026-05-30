@@ -48,6 +48,16 @@ public class DownloadStorageService : IDisposable
         const string ddl = @"
                            PRAGMA foreign_keys = ON;
 
+                           CREATE TABLE IF NOT EXISTS auto_watch_record (
+                               id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                               media_id   INTEGER NOT NULL,
+                               avid       INTEGER NOT NULL,
+                               bvid       TEXT NOT NULL,
+                               title      TEXT,
+                               created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+                               UNIQUE(media_id, avid)
+                           );
+
                            CREATE TABLE IF NOT EXISTS download_base (
                                id                    TEXT PRIMARY KEY,
                                need_download_content TEXT NOT NULL DEFAULT '{}',
@@ -669,6 +679,103 @@ WHERE id = @id";
         cmd.Parameters.AddWithValue("@finished_timestamp", d.FinishedTimestamp);
         cmd.Parameters.AddWithValue("@finished_time", d.FinishedTime);
     }
+
+    // ─── 自动监控记录 ────────────────────────────────────────────────────────
+
+    #region 自动监控记录
+
+    /// <summary>
+    /// 插入自动监控已处理记录（幂等：media_id + avid 唯一约束防重复）
+    /// </summary>
+    public void InsertAutoWatchRecord(long mediaId, long avid, string bvid, string? title)
+    {
+        lock (_lock)
+        {
+            try
+            {
+                using var cmd = _connection.CreateCommand();
+                cmd.CommandText = @"
+INSERT OR IGNORE INTO auto_watch_record (media_id, avid, bvid, title)
+VALUES (@media_id, @avid, @bvid, @title)";
+                cmd.Parameters.AddWithValue("@media_id", mediaId);
+                cmd.Parameters.AddWithValue("@avid", avid);
+                cmd.Parameters.AddWithValue("@bvid", bvid);
+                cmd.Parameters.AddWithValue("@title", title ?? (object)DBNull.Value);
+                cmd.ExecuteNonQuery();
+            }
+            catch (Exception e)
+            {
+                LogManager.Error(Tag, e);
+                Console.PrintLine("InsertAutoWatchRecord发生异常: {0}", e);
+            }
+        }
+    }
+
+    /// <summary>
+    /// 获取指定收藏夹所有已处理的 avid 集合
+    /// </summary>
+    public HashSet<long> GetProcessedAvids(long mediaId)
+    {
+        var result = new HashSet<long>();
+        lock (_lock)
+        {
+            try
+            {
+                using var cmd = _connection.CreateCommand();
+                cmd.CommandText = "SELECT avid FROM auto_watch_record WHERE media_id = @media_id";
+                cmd.Parameters.AddWithValue("@media_id", mediaId);
+                using var reader = cmd.ExecuteReader();
+                while (reader.Read())
+                {
+                    result.Add(reader.GetInt64(0));
+                }
+            }
+            catch (Exception e)
+            {
+                LogManager.Error(Tag, e);
+                Console.PrintLine("GetProcessedAvids发生异常: {0}", e);
+            }
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// 批量插入自动监控已处理记录
+    /// </summary>
+    public void InsertAutoWatchRecordBatch(long mediaId, IEnumerable<(long Avid, string Bvid, string? Title)> records)
+    {
+        lock (_lock)
+        {
+            using var tx = _connection.BeginTransaction();
+            try
+            {
+                foreach (var (avid, bvid, title) in records)
+                {
+                    using var cmd = _connection.CreateCommand();
+                    cmd.Transaction = tx;
+                    cmd.CommandText = @"
+INSERT OR IGNORE INTO auto_watch_record (media_id, avid, bvid, title)
+VALUES (@media_id, @avid, @bvid, @title)";
+                    cmd.Parameters.AddWithValue("@media_id", mediaId);
+                    cmd.Parameters.AddWithValue("@avid", avid);
+                    cmd.Parameters.AddWithValue("@bvid", bvid);
+                    cmd.Parameters.AddWithValue("@title", title ?? (object)DBNull.Value);
+                    cmd.ExecuteNonQuery();
+                }
+
+                tx.Commit();
+            }
+            catch (Exception e)
+            {
+                tx.Rollback();
+                LogManager.Error(Tag, e);
+                Console.PrintLine("InsertAutoWatchRecordBatch发生异常: {0}", e);
+            }
+        }
+    }
+
+    #endregion
 
     public void Dispose()
     {

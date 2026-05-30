@@ -361,6 +361,14 @@
     <system:String x:Key="ApplyToAll">全部应用</system:String>
     
     
+    <!-- AutoWatch 自动监控 -->
+    <system:String x:Key="AutoWatch">自动监控</system:String>
+    <system:String x:Key="AutoWatchEnabled">启用收藏夹自动监控下载</system:String>
+    <system:String x:Key="AutoWatchMediaId">收藏夹ID：</system:String>
+    <system:String x:Key="AutoWatchInterval">轮询间隔：</system:String>
+    <system:String x:Key="AutoWatchSaveDirectory">保存目录（留空使用全局默认）：</system:String>
+    <system:String x:Key="AutoWatchDownloadContent">下载内容：</system:String>
+
     <!-- CustomControl -->
     <system:String x:Key="Page">页</system:String>
     <system:String x:Key="JumpTo">跳至</system:String>

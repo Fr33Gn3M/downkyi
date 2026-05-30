@@ -92,6 +92,19 @@ public class AddToDownloadService
         _videoInfoService = videoInfoService;
     }
 
+    /// <summary>
+    /// 直接设置下载内容和目录，跳过交互对话框（供自动监控等静默场景使用）
+    /// </summary>
+    public void SetDownloadContentAndDirectory(bool downloadAudio, bool downloadVideo,
+        bool downloadDanmaku, bool downloadSubtitle, bool downloadCover)
+    {
+        _downloadAudio = downloadAudio;
+        _downloadVideo = downloadVideo;
+        _downloadDanmaku = downloadDanmaku;
+        _downloadSubtitle = downloadSubtitle;
+        _downloadCover = downloadCover;
+    }
+
     public void GetVideo(VideoInfoView videoInfoView, List<VideoSection> videoSections)
     {
         _videoInfoView = videoInfoView;

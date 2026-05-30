@@ -15,6 +15,7 @@ using DownKyi.Core.Storage;
 using DownKyi.Core.Utils;
 using DownKyi.Models;
 using DownKyi.PrismExtension.Dialog;
+using DownKyi.Services;
 using DownKyi.Services.Download;
 using DownKyi.Utils;
 using DownKyi.ViewModels;
@@ -32,7 +33,9 @@ using DownKyi.Views.Settings;
 using DownKyi.Views.Toolbox;
 using DownKyi.Views.UserSpace;
 using Prism.DryIoc;
+using Prism.Events;
 using Prism.Ioc;
+using Console = DownKyi.Core.Utils.Debugging.Console;
 using ViewSeasonsSeries = DownKyi.Views.ViewSeasonsSeries;
 using ViewSeasonsSeriesViewModel = DownKyi.ViewModels.ViewSeasonsSeriesViewModel;
 
@@ -40,8 +43,8 @@ namespace DownKyi;
 
 public partial class App : PrismApplication
 {
-    public const string RepoOwner = "yaobiao131";
-    public const string RepoName = "downkyicore";
+    public const string RepoOwner = "Fr33Gn3M";
+    public const string RepoName = "downkyi";
 
     public static ImmutableObservableCollection<DownloadingItem> DownloadingList { get; set; } = new();
     public static ImmutableObservableCollection<DownloadedItem> DownloadedList { get; set; } = new();
@@ -54,6 +57,9 @@ public partial class App : PrismApplication
 
     // 下载服务
     private IDownloadService? _downloadService;
+
+    // 自动监控服务
+    public static AutoWatchService? AutoWatchService { get; private set; }
 
     public override void Initialize()
     {
@@ -125,6 +131,7 @@ public partial class App : PrismApplication
         containerRegistry.RegisterForNavigation<ViewVideo>(ViewVideoViewModel.Tag);
         containerRegistry.RegisterForNavigation<ViewDanmaku>(ViewDanmakuViewModel.Tag);
         containerRegistry.RegisterForNavigation<ViewAbout>(ViewAboutViewModel.Tag);
+        containerRegistry.RegisterForNavigation<ViewAutoWatch>(ViewAutoWatchViewModel.Tag);
 
         // tools pages
         containerRegistry.RegisterForNavigation<ViewBiliHelper>(ViewBiliHelperViewModel.Tag);
@@ -180,6 +187,23 @@ public partial class App : PrismApplication
         }
 
         _downloadService?.Start();
+
+        // 启动自动监控服务
+        var autoWatchSettings = SettingsManager.GetInstance();
+        var autoWatchEnabled = autoWatchSettings.GetIsAutoWatchEnabled();
+        var autoWatchMediaId = autoWatchSettings.GetAutoWatchMediaId();
+        if (autoWatchEnabled && autoWatchMediaId > 0)
+        {
+            AutoWatchService = new AutoWatchService(
+                autoWatchMediaId,
+                autoWatchSettings.GetAutoWatchIntervalMinutes(),
+                downloadStorageService,
+                Container.Resolve<IEventAggregator>(),
+                (IDialogService?)Container.GetContainer().GetService(typeof(IDialogService))
+            );
+            AutoWatchService.Start();
+        }
+
         return Container.Resolve<MainWindow>();
     }
 
@@ -242,8 +266,47 @@ public partial class App : PrismApplication
         DownloadedList.AddRange(downloadedItems);
     }
 
+    /// <summary>
+    /// 刷新自动监控服务状态（由设置页启用/禁用开关调用）
+    /// 间隔、目录等参数变更需重启应用生效
+    /// </summary>
+    public static void RefreshAutoWatch()
+    {
+        var settings = SettingsManager.GetInstance();
+
+        // 如果已禁用或mediaId无效，停止服务
+        if (!settings.GetIsAutoWatchEnabled() || settings.GetAutoWatchMediaId() <= 0)
+        {
+            AutoWatchService?.Stop();
+            AutoWatchService?.Dispose();
+            AutoWatchService = null;
+            return;
+        }
+
+        // 已启用且未运行，启动服务
+        if (AutoWatchService == null)
+        {
+            var downloadStorageService = (DownloadStorageService)Current.Container.Resolve(typeof(DownloadStorageService));
+            var eventAggregator = (IEventAggregator)Current.Container.Resolve(typeof(IEventAggregator));
+            var dialogService = (IDialogService?)Current.Container.GetContainer().GetService(typeof(IDialogService));
+
+            AutoWatchService = new AutoWatchService(
+                settings.GetAutoWatchMediaId(),
+                settings.GetAutoWatchIntervalMinutes(),
+                downloadStorageService,
+                eventAggregator,
+                dialogService
+            );
+            AutoWatchService.Start();
+        }
+    }
+
     private void OnExit(object sender, ControlledApplicationLifetimeExitEventArgs e)
     {
+        // 关闭自动监控服务
+        AutoWatchService?.Stop();
+        AutoWatchService?.Dispose();
+
         // 强制落盘设置（防止防抖延迟期间退出导致配置丢失）
         SettingsManager.GetInstance().Flush();
         // 关闭下载服务
