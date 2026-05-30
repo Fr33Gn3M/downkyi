@@ -15,6 +15,10 @@
     </ItemGroup>
 
     <ItemGroup>
+        <Content Include="../version.txt" Link="version.txt" CopyToOutputDirectory="PreserveNewest"/>
+    </ItemGroup>
+
+    <ItemGroup>
         <PackageReference Include="Avalonia"/>
         <PackageReference Include="Avalonia.Controls.DataGrid"/>
         <PackageReference Include="Avalonia.Desktop"/>

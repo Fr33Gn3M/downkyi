@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Text.RegularExpressions;
 
 namespace DownKyi.Models;
@@ -9,18 +10,35 @@ public class AppInfo
     public int VersionCode { get; }
     public string VersionName { get; }
 
-    private const int A = 1;
-    private const int B = 0;
-    private const int C = 24;
-
     public AppInfo()
     {
-        VersionCode = A * 10000 + B * 100 + C;
+        // 从 version.txt 读取版本号（单一来源）
+        var version = "1.0.0"; // 默认值
+        try
+        {
+            var versionFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "version.txt");
+            if (File.Exists(versionFile))
+            {
+                var text = File.ReadAllText(versionFile).Trim();
+                if (!string.IsNullOrEmpty(text) && Regex.IsMatch(text, @"^\d+\.\d+\.\d+"))
+                {
+                    version = text;
+                }
+            }
+        }
+        catch { /* 读取失败使用默认值 */ }
+
+        var parts = version.Split('.');
+        var a = int.Parse(parts[0]);
+        var b = int.Parse(parts[1]);
+        var c = int.Parse(parts[2]);
+
+        VersionCode = a * 10000 + b * 100 + c;
 
 #if DEBUG
-        VersionName = $"{A}.{B}.{C}-debug";
+        VersionName = $"{a}.{b}.{c}-debug";
 #else
-        VersionName = $"{A}.{B}.{C}";
+        VersionName = $"{a}.{b}.{c}";
 #endif
     }
 

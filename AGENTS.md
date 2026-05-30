@@ -36,8 +36,8 @@
 
 | 项目 | 类型 | 目标框架 |
 |---|---|---|
-| `DownKyi` | WinExe（Avalonia UI） | `net6.0` |
-| `DownKyi.Core` | 类库 | `net6.0` |
+| `DownKyi` | WinExe（Avalonia UI） | `net8.0` |
+| `DownKyi.Core` | 类库 | `net8.0` |
 
 目标运行时：`win-x64`、`win-x86`、`linux-x64`、`linux-arm64`、`osx-x64`、`osx-arm64`。
 
@@ -65,9 +65,11 @@ DownKyi/
 │   │   └── DownloadManager/        ← 下载列表项 VM
 │   ├── Views/                      ← Avalonia .axaml 视图（CompiledBindings）
 │   ├── Services/                   ← IInfoService、IDownloadService 抽象
+│   │   ├── AutoWatchService.cs    ← 收藏夹自动监控服务
 │   │   └── Download/               ← DownloadService 及内置/Aria 实现
 │   ├── Events/                     ← Prism PubSubEvent<T> 定义
 │   ├── Models/                     ← 数据库实体（纯 POCO，无 ORM 注解）
+│   │   └── AutoWatchRecord.cs     ← 自动监控已处理记录
 │   ├── PrismExtension/             ← 自定义异步 IDialogService 扩展
 │   └── Utils/                      ← DictionaryResource（国际化）
 │
@@ -75,8 +77,10 @@ DownKyi/
     ├── BiliApi/                    ← Bilibili HTTP API
     │   ├── WebClient.cs            ← 单例 HttpClient 封装
     │   ├── VideoStream/            ← playURL / 字幕 API
+    │   ├── Favorites/              ← 收藏夹 API（FavoritesInfo、FavoritesResource）
     │   └── BiliUtils/              ← URL 解析、BvId <-> AvId 转换
     ├── Settings/                   ← SettingsManager 单例（partial 类）
+    │   └── SettingsManager.AutoWatch.cs ← 自动监控设置
     ├── Storage/                    ← StorageManager（路径解析）、SQLite DB
     ├── Logging/                    ← LogManager（异步文件写入器）
     ├── FFMpeg/                     ← FFMpegCore 封装
@@ -90,7 +94,7 @@ DownKyi/
 
 ### 前置条件
 
-- .NET 6 SDK
+- .NET 8 SDK
 - 系统 PATH 中存在 FFmpeg 二进制文件（开发时混流操作所需）
 - `PupNet` 工具（仅打包时需要，开发构建无需）
 
@@ -156,6 +160,47 @@ DownKyi（UI） → DownKyi.Core（领域/API）
 _eventAggregator.GetEvent<NavigationEvent>().Publish(param);
 _eventAggregator.GetEvent<MessageEvent>().Publish(message);
 ```
+
+### 自动监控服务（AutoWatchService）
+
+`AutoWatchService` 是应用级别的后台服务，负责定时轮询指定收藏夹并自动下载新视频。
+
+**架构流程**：
+```
+PeriodicTimer 触发
+  → FavoritesResource.GetFavoritesMediaId()（单次 API，获取全部 avid+bvid）
+  → 与本地 ConcurrentDictionary<long, byte> 对比（内存缓存）
+  → 与 SQLite auto_watch_record 表对比（持久化记录）
+  → 增量视频 → VideoInfoService.GetVideo() → ParseVideo() → AddToDownloadService.AddToDownload()
+  → 写入 auto_watch_record 表
+```
+
+**去重防护**（两层）：
+1. 第一层：内存 `ConcurrentDictionary` + SQLite `auto_watch_record` 表（快速过滤已处理 avid）
+2. 第二层：`AddToDownloadService.AddToDownload()` 自身检查 `App.DownloadingList` / `App.DownloadedList`
+
+**热更新机制**：
+`RunLoopAsync` 在每个轮询周期前从 `SettingsManager` 读取最新的 `IntervalMinutes` 和 `MediaId`，检测到变化时自动重建定时器或切换监控目标，无需重启应用。
+
+**生命周期**：
+- 启动：`App.CreateShell()` 中根据设置决定是否启动
+- 启停切换：设置页启用/禁用开关 → `App.RefreshAutoWatch()`
+- 停止：`App.OnExit()` 中调用 `Stop()` + `Dispose()`
+
+**关键文件**：
+- `DownKyi/Services/AutoWatchService.cs` — 核心服务
+- `DownKyi.Core/Settings/SettingsManager.AutoWatch.cs` — 设置持久化
+- `DownKyi.Core/Settings/Models/AutoWatchSettings.cs` — 设置数据模型
+- `DownKyi/Models/AutoWatchRecord.cs` — 已处理记录实体
+- `DownKyi/ViewModels/Settings/ViewAutoWatchViewModel.cs` — 设置页 VM
+- `DownKyi/Views/Settings/ViewAutoWatch.axaml` — 设置页视图
+
+**添加新的设置项**：
+1. 在 `AutoWatchSettings.cs` 添加属性
+2. 在 `SettingsManager.AutoWatch.cs` 添加 `GetXxx()` / `SetXxx()` 方法对
+3. 在 `ViewAutoWatchViewModel.cs` 添加绑定属性和命令
+4. 在 `ViewAutoWatch.axaml` 添加 UI 控件
+5. 在 `Default.axaml` 添加本地化字符串
 
 ---
 
@@ -425,6 +470,7 @@ Console.PrintLine("value: {0}", someValue);
 - `SettingsManager.UserInfo.cs` — 已登录用户
 - `SettingsManager.About.cs` — 版本信息
 - `SettingsManager.WindowSetting.cs` — 窗口大小/位置
+- `SettingsManager.AutoWatch.cs` — 收藏夹自动监控设置
 
 访问方式：`SettingsManager.GetInstance().GetXxx()` / `SetXxx(value)`。
 
